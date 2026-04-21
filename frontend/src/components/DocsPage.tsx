@@ -119,18 +119,6 @@ export function DocsPage({ onNavigate }: Props) {
           </svg>
         </button>
         <p className="text-xs font-semibold uppercase tracking-widest text-[#5b9bd5]">Documentation</p>
-        {/* Mobile quick-nav — horizontal scroll */}
-        <nav className="flex lg:hidden gap-2 overflow-x-auto scrollbar-none ml-2 pb-0.5">
-          {SECTIONS.map((s) => (
-            <a
-              key={s}
-              href={`#${s.toLowerCase().replace(/ /g, '-')}`}
-              className="shrink-0 px-3 py-1 rounded-full border border-[#e0e0e0] text-xs text-[#555] hover:border-[#5b9bd5] hover:text-[#5b9bd5] transition-colors"
-            >
-              {s}
-            </a>
-          ))}
-        </nav>
       </div>
 
       {/* ── Body: sidebar + content ── */}

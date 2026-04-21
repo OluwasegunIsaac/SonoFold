@@ -193,7 +193,7 @@ function LandingPage({ onEnter, onNavigate }: { onEnter: () => void; onNavigate:
                      bg-[#1e3a4f] hover:bg-[#162d3e] disabled:bg-[#ccc] disabled:cursor-not-allowed
                      text-white py-3.5 rounded-lg text-base font-semibold transition-colors"
         >
-          music for my DNA
+          music to my ears
         </button>
 
         {/* Load examples */}
