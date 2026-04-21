@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { FASTAInput } from './components/FASTAInput/FASTAInput'
 import { StructureViewer } from './components/StructureViewer/StructureViewer'
 import type { StructureViewerHandle } from './components/StructureViewer/StructureViewer'
@@ -481,6 +481,50 @@ export default function App() {
 
     return null
   })()
+
+  // ── Fetch human-readable protein name from UniProt when accession is detected ──
+  const [resolvedProteinName, setResolvedProteinName] = useState<string | null>(null)
+
+  useEffect(() => {
+    setResolvedProteinName(null)
+    if (!fasta) return
+    const trimmed = fasta.trim()
+
+    // Extract accession from bare ID or sp|ACC| FASTA header
+    let accession: string | null = null
+    const headerMatch = trimmed.match(/(?:sp|tr)\|([A-Z0-9]{6,10})\|/i)
+    if (headerMatch) {
+      accession = headerMatch[1].toUpperCase()
+    } else if (
+      /^[OPQ][0-9][A-Z0-9]{3}[0-9](-\d+)?$/i.test(trimmed) ||
+      /^[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}(-\d+)?$/i.test(trimmed)
+    ) {
+      accession = trimmed.toUpperCase().split('-')[0]
+    }
+
+    if (!accession) return
+    const acc = accession
+    let cancelled = false
+
+    fetch(`https://rest.uniprot.org/uniprotkb/${acc}.json`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return
+        const name =
+          data?.proteinDescription?.recommendedName?.fullName?.value ||
+          data?.proteinDescription?.submittedNames?.[0]?.fullName?.value ||
+          null
+        const gene = data?.genes?.[0]?.geneName?.value ?? null
+        if (name) setResolvedProteinName(gene ? `${name} (${gene})` : name)
+      })
+      .catch(() => {})
+
+    return () => { cancelled = true }
+  }, [fasta])
+
+  // Label shown in the panel: resolved name > raw accession/header
+  const displayLabel = resolvedProteinName ?? proteinMeta?.label ?? null
+
   const [page, setPage] = useState<PageType>('landing')
   const [showExport, setShowExport] = useState(false)
   const [audioFormat, setAudioFormat] = useState<AudioExportFormat>('MP3')
@@ -588,7 +632,7 @@ export default function App() {
             {/* 3D structure viewer */}
             <div className={`${card} flex flex-col`}>
               <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
-                {proteinMeta ? (
+                {displayLabel && proteinMeta ? (
                   <>
                     <a
                       href={proteinMeta.url}
@@ -597,7 +641,7 @@ export default function App() {
                       className="text-[#5b9bd5] hover:underline underline-offset-2 flex items-center gap-1"
                       title="Open in protein database"
                     >
-                      {proteinMeta.label}
+                      {displayLabel}
                       <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                       </svg>
