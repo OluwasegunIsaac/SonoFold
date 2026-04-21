@@ -23,10 +23,13 @@ export function useProteinQuery() {
         })
         setResult(data)
       } catch (err: unknown) {
-        const msg =
-          axios.isAxiosError(err)
-            ? (err.response?.data?.detail ?? err.message)
-            : 'Unknown error'
+        let msg = axios.isAxiosError(err)
+          ? (err.response?.data?.detail ?? err.message)
+          : 'Unknown error'
+        // Friendlier message for ESMFold timeouts
+        if (String(msg).includes('ESMFold unavailable') || String(msg).includes('504')) {
+          msg = 'ESMFold is currently overloaded. Try a UniProt accession (e.g. P02144) instead — it uses AlphaFold and is always fast.'
+        }
         setStatus('error', String(msg))
       }
     },
